@@ -20,6 +20,7 @@ private:
 public:
     Lexer(string nameFile);//Calls function that starts process
     void startProcess();
+    void determineCOLON();
     void determineID();
     void determineString();
     void determineComment();

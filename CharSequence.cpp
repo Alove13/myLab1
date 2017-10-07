@@ -39,7 +39,7 @@ char CharSequence::currChar()
 }
 bool CharSequence::EoF()
 {
-    if(charIndex >= seqVec.size())
+    if(charIndex >= seqVec.size() -1)
     {
         return true;
     }

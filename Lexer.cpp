@@ -7,80 +7,66 @@ Lexer::Lexer(string nameFile) : mySeq(nameFile) //uses Lexer constructor to cons
 
 void Lexer::startProcess()
 {
-    //char blob;
     while(!(mySeq.EoF()))//mySeq.EoF()
     {
-        // cout << "Current Char: " << mySeq.currChar() << " index: " << mySeq.currIndex()<<endl;
-        // cout << "lineNumber "<<mySeq.currLine() << endl;
-        //cout << "tokenList " << tokenList[mySeq.currIndex()].getType()<<endl;
-        // cin >> blob;
-        //char currentChar = mySeq.currChar();
         switch(mySeq.currChar())
         {
             case '\n':
-            cout << "Recs a backslash n"<<endl;
             mySeq.advanceIndex();
-            mySeq.incLineNum();
-                //advance lineNum and charIndex
+            //mySeq.incLineNum();
             break;
             case ',':
-            cout << "Recs a comma"<<endl;
                 //basic cases immediately create token to add to tokenList
                 tokenList.push_back(Token("COMMA",",",mySeq.currLine()));
                 mySeq.advanceIndex();
-            break;
+        	mySeq.checkNewLine();
+	    break;
             case '.':
-            cout << "Recs a period"<<endl;
                 tokenList.push_back(Token("PERIOD",".",mySeq.currLine()));
                 mySeq.advanceIndex();
+        	mySeq.checkNewLine();
             break;
             case '?':
-            cout << "Recs a q_mark"<<endl;
                 tokenList.push_back(Token("Q_MARK","?",mySeq.currLine()));
                 mySeq.advanceIndex();
+        	mySeq.checkNewLine();
             break;
             case '(':
-            cout << "Recs a left_paren"<<endl;
                 tokenList.push_back(Token("LEFT_PAREN","(",mySeq.currLine()));
                 mySeq.advanceIndex();
-            break;
+        	mySeq.checkNewLine();
+	    break;
             case ')':
-            cout << "Recs a right_paren"<<endl;
                 tokenList.push_back(Token("RIGHT_PAREN",")",mySeq.currLine()));
                 mySeq.advanceIndex();
+        	mySeq.checkNewLine();
             break;
             case ':':
-                cout << "Recs a :" << endl;
-                mySeq.advanceIndex(); //Later put inside Colon or Colon_Dash function
-            break;
+	    	determineCOLON();
+	    break;
             case '*':
-            cout << "Recs a multiply"<<endl;
                 tokenList.push_back(Token("MULTIPLY","*",mySeq.currLine()));
                 mySeq.advanceIndex();
+        	mySeq.checkNewLine();
             break;
             case '+':
-            cout << "Recs a add"<<endl;
                 tokenList.push_back(Token("ADD","+",mySeq.currLine()));
-                mySeq.advanceIndex();
+                mySeq.advanceIndex();	
+        	mySeq.checkNewLine();
             break;
             case '\'': //check for ' for string
-                cout << "Recs a single quote!" << endl;
                 determineString();
             break;
             case '#': //comment
-                cout << "Recs a Hash Tag!" << endl;
                 determineComment();
-                mySeq.advanceIndex(); //Later put inside comment function
             break;
             case ' ': //WS need other way to check???
-                cout << "Recs a  WS!" << endl;
                 mySeq.advanceIndex(); //Later put inside whitespace function
             break;
             default:
                 //Check if ID, else make undefined:
                 if(isalpha(mySeq.currChar()))
                 {
-                    cout << "Recs an ID!" << endl;
                     determineID();
                     mySeq.advanceIndex();
                 }
@@ -90,9 +76,9 @@ void Lexer::startProcess()
                     string holder;
                     ss << mySeq.currChar();
                     ss >> holder;
-                        cout << "undefined" << endl;
                         tokenList.push_back(Token("UNDEFINED",holder,mySeq.currLine()));
                         mySeq.advanceIndex();
+			mySeq.checkNewLine();
                 }
             break;
         }
@@ -106,6 +92,37 @@ void Lexer::printTokens()
         printerString << "(" << tokenList[i].getType() << "," << "\"" << tokenList[i].getValue() << "\"" << "," << tokenList[i].getLineNum() << ")" <<endl;   
     }
     cout << printerString.str();
+}
+void Lexer::determineCOLON()
+{
+	saveLineNum = mySeq.currLine();
+        if(mySeq.EoF())
+        {
+		tokenList.push_back(Token("COLON",":", saveLineNum));
+        	tokenString.clear();
+	}    
+	else
+            {//Check next char:
+               mySeq.advanceIndex();
+	       mySeq.checkNewLine();
+		if(mySeq.currChar() == '-')
+		{
+			if(mySeq.EoF())
+			{
+				tokenList.push_back(Token("COLON_DASH", ":-", saveLineNum));
+			}	
+			else
+			{
+				tokenList.push_back(Token("COLON_DASH", ":-", saveLineNum));
+				mySeq.advanceIndex();
+				mySeq.checkNewLine();
+			}		
+		}
+		else
+		{
+			tokenList.push_back(Token("COLON",":",saveLineNum)); //still is a colon
+		}
+            }
 }
 void Lexer::determineID()
 {
@@ -280,8 +297,8 @@ void Lexer::determineString()
     }   
 }
 void Lexer::determineComment()
-{
-    char tester;
+{    
+    bool lineTrigger = true;
     bool blockTrigger = true;
     saveLineNum = mySeq.currLine();
     tokenString.clear(); //Just in case
@@ -299,32 +316,52 @@ void Lexer::determineComment()
     }
     if(mySeq.currChar() != '|') //then is a Line Comment
     {
-        while(mySeq.currChar() != '\n' )
-        {
-            cout << "Character:" << mySeq.currChar()<<endl;
-            cin >> tester;
-            tokenString += mySeq.currChar();
-            if(mySeq.EoF())
-            {
-                tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
-                tokenString.clear();
-            }
-            else
-            {
-                //Keep going until end of Line
-                mySeq.advanceIndex();
-                mySeq.checkNewLine();
-            }
-        }
-        //Reached end of line
-        tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
-        tokenString.clear();  
+	while(lineTrigger)
+	{
+	    if(mySeq.currChar() == '\n') //check end of line
+	    {
+		tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
+		lineTrigger = false;
+	    }
+	    else
+	    {
+            	tokenString += mySeq.currChar();
+            	if(mySeq.EoF()) //then check EOF
+            	{
+                	tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
+                	tokenString.clear();
+	    		lineTrigger = false;
+		}
+            	else
+            	{
+                	//Keep going until end of Line
+                	mySeq.advanceIndex();
+                	mySeq.checkNewLine();
+            	}
+	    }
+         }
     }
     else //Start of Block Comment
     {
+
+	tokenString += mySeq.currChar();
+	if(mySeq.EoF())
+	{
+		tokenList.push_back(Token("UNDEFINED",tokenString,saveLineNum));
+		tokenString.clear();	
+		blockTrigger = false;
+	}
+	else
+	{
+		mySeq.advanceIndex();
+		mySeq.checkNewLine();
+	}
         while(blockTrigger)
         { 
-            tokenString += mySeq.currChar();  //Add each character                
+            if(mySeq.currChar() != '\n') //when print, will keep string on same line
+            {
+                 tokenString += mySeq.currChar();
+            }
             if(mySeq.currChar() != '|')
             {
                 if(mySeq.EoF())
@@ -341,6 +378,29 @@ void Lexer::determineComment()
             }
             else
             {
+		if(mySeq.EoF())
+		{
+			tokenList.push_back(Token("UNDEFINED",tokenString,saveLineNum));
+			tokenString.clear();
+			blockTrigger = false;
+		}
+		else
+		{
+			mySeq.advanceIndex();
+			mySeq.checkNewLine();
+		}
+
+            	if(mySeq.currChar() != '\n') //when print, will keep string on same line
+            	{
+                	 tokenString += mySeq.currChar();
+            	}
+		else
+		{
+			mySeq.advanceIndex();
+			mySeq.checkNewLine();
+			tokenString += mySeq.currChar();
+		}
+
                 if(mySeq.currChar() != '#')
                 {
                     if(mySeq.EoF())
@@ -357,9 +417,21 @@ void Lexer::determineComment()
                 }
                 else //reached complete Block Comment
                 {
-                    tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
-                    tokenString.clear();
-                    blockTrigger = false;
+		    if(mySeq.EoF())
+		    {
+                    	tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
+                    	tokenString.clear();
+                    	blockTrigger = false;
+		    }
+		    else
+		    {
+                    	tokenList.push_back(Token("COMMENT",tokenString,saveLineNum));
+                    	tokenString.clear();
+                    	blockTrigger = false;
+					
+			mySeq.advanceIndex();
+			mySeq.checkNewLine();
+		    }
                 }
             }
         }

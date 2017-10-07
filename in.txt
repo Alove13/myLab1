@@ -1,1 +1,24 @@
-#
+.
+,
++
+*
+(
+)
+?
+1 2 3456789@#$%^&=
+apple
+ap
+ple
+2ap
+Schemes Rules
+Rul123 Sche
+mes
+'hi' 'ho'
+'hel
+lo'
+'hi''hey'
+#good
+#|block|#
+#|2line
+|#
+#|notgood

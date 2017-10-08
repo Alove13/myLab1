@@ -25,6 +25,6 @@ public:
     void determineString();
     void determineComment();
     void printTokens();
-    bool determineKeyWords(string stringToken, int theSavedLineNum);
+    bool determineKeyWords(string stringToken, int theSavedLineNum); 
 };
 //#endif LEXER_H_

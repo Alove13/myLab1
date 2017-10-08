@@ -92,6 +92,7 @@ void Lexer::printTokens()
         printerString << "(" << tokenList[i].getType() << "," << "\"" << tokenList[i].getValue() << "\"" << "," << tokenList[i].getLineNum() << ")" <<endl;   
     }
     cout << printerString.str();
+    cout << "Total Tokens = " << tokenList.size()<< endl;
 }
 void Lexer::determineCOLON()
 {
